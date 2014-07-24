@@ -61,7 +61,6 @@ void add_packet_to_list(packet_t *packet) {
         uint16_t i;
         for(i = N_PACKETS - 1; i > 0; i--) {
                 packets[i] = packets[i - 1];
-                
         }
         
         packets[0] = tmp;
@@ -69,7 +68,10 @@ void add_packet_to_list(packet_t *packet) {
         //Add new packet
         
         memcpy(packets[0], packet, sizeof(packet_t));
-        if(n_packets < N_PACKETS) n_packets++;
+        if(n_packets < N_PACKETS) {
+                n_packets++;
+                pos++;
+        }
 }
 
 void read_packet_to_list() {
@@ -160,7 +162,113 @@ void update_window_list() {
 }
 
 void update_window_detail() {
-        wprintw(detail_window, "Not implemented yet");
+        packet_t *packet = packets[pos];
+        werase(detail_window);
+        mvwprintw(detail_window, 2, 2, "TEST");
+
+        struct tm tm = *localtime(&packet->timestamp);
+
+        if(packet->dir == DIR_NONE) return;
+        else if(packet->dir == DIR_OUT) {
+                mvwprintw(detail_window, 0, 0, "Outgoing packet   Sent at: %.2d:%.2d:%.2d        To: %.2X:%.2X:%.2X:%.2X", 
+                        packet->addr.addr[0], packet->addr.addr[1], packet->addr.addr[2], packet->addr.addr[3]
+                );
+                
+                switch(packet->type) {
+                        default: {
+                                mvwprintw(detail_window, 2, 0, "Unsupported packet type, please check if it's the newwest version of Radiocrafts Analyzer. If so, please send a bug report at https://github.com/enbyted/radiocrafts-analyzer");
+                        }
+                }
+        } else if(packet->dir == DIR_IN) {
+                mvwprintw(detail_window, 0, 0, "Incoming packet   Received at: %.2d:%.2d:%.2d  From: %.2X:%.2X:%.2X:%.2X", 
+                        tm.tm_hour, tm.tm_min, tm.tm_sec,
+                        packet->addr.addr[0], packet->addr.addr[1], packet->addr.addr[2], packet->addr.addr[3]
+                );
+                in_packet_t *in_packet = (in_packet_t *)&packet->data[0];
+                switch(packet->type) {
+                        case TYPE_SERIAL_DATA_IN: {
+                                data_serial_t *data = (data_serial_t *)&in_packet->data[0];
+                                mvwprintw(detail_window, 2, 0, "Received following serial data (First HEX notation, then ASCII)");
+                                
+                                wmove(detail_window, 4, 0);
+                                
+                                uint8_t n;
+                                uint16_t header_size = &data->data[0] - &in_packet->len;
+                                for(n = 0; n < in_packet->len - header_size; n++) {
+                                        wprintw(detail_window, "%.2X ", data->data[n]);
+                                }
+                                wprintw(detail_window, "\n");
+                                for(n = 0; n < in_packet->len - header_size; n++) {
+                                        if(data->data[n] >= ' ' || data->data[n] <= '~') {
+                                                wprintw(detail_window, "%c", data->data[n]);
+                                        }
+                                }
+                                
+                                break;
+                        }
+                        case TYPE_STATUS:
+                        case TYPE_RESET: {
+                                data_event_t *data = (data_event_t *) &in_packet->data[0];
+                                switch(data->data[1]) {
+                                        case 0x00: {
+                                                mvwprintw(detail_window, 2, 0, "IMA Packet");
+                                                break;
+                                        }
+                                        case 0x01: {
+                                                mvwprintw(detail_window, 2, 0, "IMA Packet caused by device power on reset");
+                                                break;
+                                        }
+                                        case 0x02: {
+                                                mvwprintw(detail_window, 2, 0, "IMA Packet caused by device external reset");
+                                                break;
+                                        }
+                                        case 0x03: {
+                                                mvwprintw(detail_window, 2, 0, "IMA Packet caused by device reset from config/sleep");
+                                                break;
+                                        }
+                                        case 0x04: {
+                                                mvwprintw(detail_window, 2, 0, "IMA Packet caused by reset command");
+                                                break;
+                                        }
+                                        case 0x05: {
+                                                mvwprintw(detail_window, 2, 0, "IMA Packet caused by device watchdog reset");
+                                                break;
+                                        }
+                                }
+                                
+                                mvwprintw(detail_window, 4, 0, "Module temperature: %d°C", ((int16_t)data->temp) - 128);
+                                mvwprintw(detail_window, 5, 0, "Module voltage: %fV", data->voltage * 0.03f);
+
+                                wattrset(detail_window, A_BOLD);
+                                mvwprintw(detail_window, 7, 8, "Analogue inputs");
+                                wattrset(detail_window, A_NORMAL);
+                                
+                                mvwprintw(detail_window, 8, 0, "Analogue input 0 (GPIO0): %.2fV", data->analog0 * 0.03f);
+                                mvwprintw(detail_window, 9, 0, "Analogue input 1 (GPIO1): %.2fV", data->analog1 * 0.03f);
+                                
+                                wattrset(detail_window, A_BOLD);
+                                mvwprintw(detail_window, 1, 51, "Digital inputs");
+                                wattrset(detail_window, A_NORMAL);
+
+                                uint8_t j;
+                                for(j = 0; j < 8; j++) {
+                                        if(data->inputs & (1<<j)) {
+                                                mvwprintw(detail_window, j + 2, 50, "Input GPIO%d high", j);
+                                        } else {
+                                                mvwprintw(detail_window, j + 2, 50, "Input GPIO%d low", j);
+                                        }
+                                }
+                                
+                                
+                                break;
+                        }
+                        default: {
+                                mvwprintw(detail_window, 2, 0, "Unsupported packet type, please check if it's the newest version of Radiocrafts Analyzer. If so, please send a bug report at https://github.com/enbyted/radiocrafts-analyzer");
+                        }
+                }
+        }
+        
+        wrefresh(detail_window);
 }
 
 void update_list(int ch) {
@@ -206,7 +314,7 @@ void update_list(int ch) {
         
         // Update windows
         update_window_list();
-        //update_window_detail(); //Not implemented yet.
+        update_window_detail();
 }
 
 int init_list(int starty, int height) {

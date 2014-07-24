@@ -94,9 +94,10 @@ typedef struct {
     uint8_t data[2];
     uint8_t locator[4];
     uint8_t temp;
+    uint8_t voltage;
     uint8_t inputs;
     uint16_t analog0;
-    uint16_t analog2;
+    uint16_t analog1;
     uint16_t hw_version;
     uint16_t fw_version;
 } data_event_t;
