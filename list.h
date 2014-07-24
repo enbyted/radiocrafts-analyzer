@@ -49,10 +49,10 @@ typedef struct {
 
 const char *packet_type_to_string(uint8_t type);
 
-void read_packet_to_list();
 void add_packet_to_list(packet_t *packet);
 
 int init_list(int starty, int height);
 void update_list(int ch);
+void close_list(void);
 
 #endif //__LIST_H__

@@ -11,9 +11,34 @@
 
 #include "packet.h"
 
+static InPacketHandler inHandlers[N_IN_HANDLERS];
 static uint8_t buffer[255];
 static uint8_t seq_no = 0;
 int fd;
+
+int openSerialPort(const char *portName);
+void closeSerialPort();
+
+// Handlers
+
+int addInPacketHandler(InPacketHandler handler) {
+    uint8_t i;
+    for(i = 0; i < N_IN_HANDLERS; i++) {
+        if(inHandlers[i] == NULL) {
+            inHandlers[i] = handler;
+            return i;
+        }
+    }
+    return -1;
+}
+
+void removeInPacketHandler(int id) {
+    if(id < 0) return;
+    if(id >= N_IN_HANDLERS) return;
+    inHandlers[id] = NULL;
+}
+
+// Actual library
 
 int openSerialPort(const char *name) {
     if(fd != 0) closeSerialPort();
@@ -206,5 +231,35 @@ in_packet_t* readPacket() {
     ret->latency = (tmp1 << 8) | tmp2; // Same here
     
     return ret;
+}
+
+// Lifecycle functions
+
+void update_packet(int ch) {
+    in_packet_t *packet = readPacket();
+    
+    if(packet != NULL) {
+        uint8_t i;
+        for(i = 0; i < N_IN_HANDLERS; i++) {
+            if(inHandlers[i] != NULL) {
+                inHandlers[i](packet);
+            }
+        }
+    }
+}
+
+int init_packet(const char *portName) {
+    if(openSerialPort(portName) != 0) return -1;
+    
+    uint8_t i;
+    for(i = 0; i < N_IN_HANDLERS; i++) {
+        inHandlers[i] = NULL;
+    }
+    
+    return 0;
+}
+
+void close_packet() {
+    closeSerialPort();
 }
 

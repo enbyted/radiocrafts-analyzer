@@ -74,8 +74,7 @@ void add_packet_to_list(packet_t *packet) {
         }
 }
 
-void read_packet_to_list() {
-        in_packet_t *in_packet = readPacket();
+void read_packet_to_list(in_packet_t *in_packet) {
         if(in_packet == NULL) return;
         
         packet_t packet;
@@ -309,9 +308,6 @@ void update_list(int ch) {
                 top = bottom - lines + 1;
         }
         
-        // Read packet from serial port 
-        read_packet_to_list();
-        
         // Update windows
         update_window_list();
         update_window_detail();
@@ -326,7 +322,10 @@ int init_list(int starty, int height) {
         wrefresh(detail_window);
 
         void *mem = calloc(N_PACKETS, sizeof(packet_t));
-        if(mem == NULL) return -1;
+        if(mem == NULL) {
+                printf("cannot allocate memory");
+                return -1;
+        }
         
         uint16_t i;
         for(i = 0; i < N_PACKETS; i++) {
@@ -334,5 +333,11 @@ int init_list(int starty, int height) {
                 packets[i]->dir = DIR_NONE;
         }
         
+        addInPacketHandler(&read_packet_to_list);
+        
         return 0;
+}
+
+void close_list(void) {
+        return;
 }

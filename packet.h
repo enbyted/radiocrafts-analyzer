@@ -109,10 +109,17 @@ typedef struct {
 
 #pragma pack(pop)
 
+typedef void (*InPacketHandler)(in_packet_t *packet);
+#define N_IN_HANDLERS	5
+
 //#define DEBUG_OUT_PACKET 1
 
-int openSerialPort(const char *name);
-void closeSerialPort();
+//int openSerialPort(const char *name);
+//void closeSerialPort();
+
+int init_packet(const char *portName);
+void close_packet();
+void update_packet(int ch);
 
 void sendCommand(uint8_t addr[], uint8_t type, uint8_t data1, uint8_t data2);
 void setGPIOFunction(uint8_t addr[], uint8_t gpio, uint8_t function, uint8_t trigger);
@@ -122,7 +129,10 @@ const char* packetType(uint8_t type);
 const char* msgDetail(uint8_t detail);
 void printPacketInfo(in_packet_t *packet);
 
-in_packet_t* readPacket();
-bool isPacketAvailable();
+int addInPacketHandler(InPacketHandler handler);
+void removeInPacketHandler(int i);
+
+//in_packet_t* readPacket();
+//bool isPacketAvailable();
 
 #endif

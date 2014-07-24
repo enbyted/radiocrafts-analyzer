@@ -10,36 +10,47 @@
 #include "colors.h"
 
 const char *serialPort = "/dev/ttyUSB0";
+static bool running;
+int init_ncurses();
+void close_ncurses();
+void update_ncurses(int ch);
 
-void init_ncurses();
-
-int main()
+int main(int argc, char *argv[])
 {
-        if(openSerialPort(serialPort) != 0) return -1;
+        printf("a");
+        running = true;
+        int ch;
         
-        init_ncurses();
+        if(init_packet(serialPort) != 0) return -1;
+        printf("b");
+        if(init_ncurses() != 0) return -1;
+        printf("c");
         if(init_list(0, LINES) != 0) return -1;
         
-        bool running = true;
-        int ch;
         while(running) {
                 ch = getch();
                 
+                update_packet(ch);
+                update_ncurses(ch);
                 update_list(ch);
                 
-                if(ch == 'q' || ch == 'Q') {
-                        running = false;
-                }
-                
-
+                //TODO: Add help somewhere
         }
-        endwin();
-        closeSerialPort();
+        
+        close_list();
+        close_ncurses();
+        close_packet();
         
 	return 0;
 }
 
-void init_ncurses() {
+void update_ncurses(int ch) {
+        if(ch == 'q' || ch == 'Q') {
+                running = false;
+        }
+}
+
+int init_ncurses() {
         initscr();
         start_color();
         cbreak();
@@ -50,4 +61,10 @@ void init_ncurses() {
         timeout(0);
         
         init_pair(COLOR_HEADER, COLOR_BLACK, COLOR_CYAN);
+        
+        return 0;
+}
+
+void close_ncurses() {
+        endwin();
 }
