@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Wall
-OBJS=packet.o list.o main.o
+OBJS=packet.o list.o devices.o main.o
 OUTPUT=analyzer
 LFLAGS=-lncurses -lpanel
 

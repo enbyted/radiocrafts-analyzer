@@ -7,6 +7,7 @@
 
 #include "packet.h"
 #include "list.h"
+#include "devices.h"
 #include "colors.h"
 
 const char *serialPort = "/dev/ttyUSB0";
@@ -17,15 +18,13 @@ void update_ncurses(int ch);
 
 int main(int argc, char *argv[])
 {
-        printf("a");
         running = true;
         int ch;
         
         if(init_packet(serialPort) != 0) return -1;
-        printf("b");
         if(init_ncurses() != 0) return -1;
-        printf("c");
-        if(init_list(0, LINES) != 0) return -1;
+        if(init_list(0, LINES / 2) != 0) return -1;
+        if(init_devices(LINES / 2 + 1, LINES / 2) != 0) return -1;
         
         while(running) {
                 ch = getch();

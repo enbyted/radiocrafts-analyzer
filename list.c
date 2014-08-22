@@ -122,7 +122,7 @@ void read_packet_to_list(in_packet_t *in_packet) {
         add_packet_to_list(&packet);
 }
 
-void update_window_list() {
+static void update_window_list() {
         werase(list_window);
         wprintw(list_window, "DIR  TIME      ID     ADDRESS      TYPE                  LATENCY  HOPS  RSSI");
         //		      OUT  HH:MM:SS  65535  AA:BB:CC:DD  SERIAL_DATA_OUT       1000ms   100   -123dBm
@@ -160,7 +160,7 @@ void update_window_list() {
         wrefresh(list_window);        
 }
 
-void update_window_detail() {
+static void update_window_detail() {
         packet_t *packet = packets[pos];
         werase(detail_window);
         mvwprintw(detail_window, 2, 2, "TEST");
